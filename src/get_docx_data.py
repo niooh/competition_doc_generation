@@ -1,7 +1,11 @@
+from pathlib import Path
 from docx import Document
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 import os
+
+
+base_dir = Path(__file__).resolve().parent.parent
 
 # 提取行尾分值（无分返回None）
 def extract_end_score(line: str) -> int | None:
@@ -98,9 +102,9 @@ def parse_doc_correct(doc_path: str) -> tuple[str, list[tuple[str, int]]]:
     filtered_result = filter_parent_items(result)
     return title, filtered_result
 
-# 批量读取doc文件夹下所有docx的数据，得到列表
+# 批量读取 doc/ 下所有 docx 的数据，得到列表
 def docx_data_to_ls() -> dict[str, list[tuple[str, int]]]:
-    folder = "./doc/"
+    folder = base_dir / "doc"
     res = {}
     if not os.path.exists(folder):
         os.makedirs(folder)

@@ -1,10 +1,12 @@
+from pathlib import Path
 import random
+import re
+
 import openpyxl
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
-import re
 
-from get_docx_data import docx_data_to_ls
+from src.get_docx_data import docx_data_to_ls
 
 workbook = openpyxl.Workbook()
 default_sheet = workbook.active
@@ -196,6 +198,17 @@ for sheet in workbook.worksheets:
                 continue
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
+import os
+from pathlib import Path
+
+def main():
+    # 确保 dist 目录存在
+    dist_dir = Path(__file__).resolve().parent.parent / "dist"
+    dist_dir.mkdir(parents=True, exist_ok=True)
+    output_path = dist_dir / "final.xlsx"
+    workbook.save(output_path)
+    print(f"✓ 文件已保存到 {output_path}")
 
 if __name__ == "__main__":
-    workbook.save("./dist/final.xlsx")
+    main()
+    
