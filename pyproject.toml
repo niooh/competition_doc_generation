@@ -7,19 +7,25 @@ name = "competition_doc_generation"
 version = "0.1.0"
 authors = [ { name = "niooh", email = "3244414236@qq.com" } ]
 description = "Automated Generation of Competition Question Documents"
-long_description = { file = "README.md" }
-long_description_content_type = "text/markdown"
-requires-python = ">=3.10"  # 需支持直接的 Type Hints
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.11"  # 需支持 Type Hints
 license = { file = "LICENSE" }
 
 dependencies = [
-  "pandas>=2.0.0",
   "openpyxl>=3.1.0",
-  "python-docx>=1.1.0"
+  "pandas>=2.0.0",
+  "python-docx>=1.1.0",
+  "pywin32>=306",
+  "pypdf>=6.10.0"
 ]
 
 [project.optional-dependencies]
-dev = ["taskipy"]
+dev = []
 
-[tool.taskipy.tasks]
-xlsx = "python -m src.generate_xlsx"
+[project.scripts]
+xlsx = "src.generate_xlsx:main"
+merge = "src.merge_docx_to_pdf:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]

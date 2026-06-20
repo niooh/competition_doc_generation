@@ -2,22 +2,17 @@
 
 ## Quick Start
 
-### 环境要求
-
-- Python >= 3.10
-
 ### 安装依赖
 
-- 方式一：使用 uv
+你需要有：
+- Python >= 3.11
+- 包管理器 [uv](https://github.com/astral-sh/uv)
+- Windows 10+ 环境（如果需要支持通过 office 将 docx 转为 pdf）
+
+然后运行以下命令安装需要的包：
 
 ```bash
 uv sync
-```
-
-- 方式二：使用 pip
-
-```bash
-pip install .
 ```
 
 ### 准备试题文档
@@ -31,9 +26,7 @@ pip install .
 ### 运行脚本生成表格
 
 ```bash
-task xlsx  # 需要 taskipy
-# 或
-python -m src.generate_xlsx
+uv run xlsx
 ```
 
 脚本执行后会输出 `dist/final.xlsx`，即为批改表格。
@@ -49,4 +42,6 @@ python -m src.generate_xlsx
 
 ## Todo
 
-- [ ] 自动生成合并文档：将批改后的数据回填至原始 Word 试题中，方便存档。
+- [ ] 自动生成合并文档。
+- [ ] 检查文档格式。
+
