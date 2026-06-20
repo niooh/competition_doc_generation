@@ -1,9 +1,9 @@
 from pathlib import Path
 from docx import Document
+from docx.document import Document as DocumentType
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 import os
-
 
 base_dir = Path(__file__).resolve().parent.parent
 
@@ -55,7 +55,7 @@ def get_paragraph_level(para: Paragraph) -> int:
     return int(ilvl.get(qn('w:val'))) + 1
 
 # 取文档标题
-def get_doc_title(doc: Document) -> str:
+def get_doc_title(doc: DocumentType) -> str:
     for p in doc.paragraphs:
         t = p.text.strip()
         if t:

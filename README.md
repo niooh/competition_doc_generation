@@ -39,6 +39,12 @@ uv run xlsx
 | **各题分表** | 每题一个 sheet，自动填入小题号与满分，得分处可手动填写 |
 | **总分统计** | 自动计算全卷总分、最高三题总分及排名 |
 
+### Develop
+
+```bash
+uv sync --group dev
+uvx ty check .  # 检查类型
+```
 
 ## Todo
 

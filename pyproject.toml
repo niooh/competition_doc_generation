@@ -16,11 +16,14 @@ dependencies = [
   "pandas>=2.0.0",
   "python-docx>=1.1.0",
   "pywin32>=306",
-  "pypdf>=6.10.0"
+  "pypdf>=6.10.0",
+  "reportlab>=4.0",
 ]
 
-[project.optional-dependencies]
-dev = []
+[dependency-groups]
+dev = [
+    "ty>=0.0.50",
+]
 
 [project.scripts]
 xlsx = "src.generate_xlsx:main"
@@ -29,3 +32,4 @@ merge = "src.merge_docx_to_pdf:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src", "src.*"]
+
