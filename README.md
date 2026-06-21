@@ -59,6 +59,13 @@ uv run merge
 包含封面、目录、正文及灰色倾斜水印。
 </details>
 
+### 5. 初步检查 DOCX 格式
+
+```pwsh
+uv run check
+# 或 python -m src.utils.format_checker
+```
+
 ## Develop & Contribute
 
 ```pwsh

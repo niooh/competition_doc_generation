@@ -19,6 +19,6 @@ def get_cjk_font():
             return _cjk_font_name
 
     raise FileNotFoundError(
-        "No CJK font found. Install SimSun, Microsoft YaHei, SimHei or KaiTi, "
+        "No CJK font found, please install SimSun, Microsoft YaHei, SimHei or KaiTi, "
         "or update FONT_CANDIDATES in config.py."
     )
