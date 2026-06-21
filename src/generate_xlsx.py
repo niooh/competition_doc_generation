@@ -5,210 +5,250 @@ import re
 import openpyxl
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
+from openpyxl.workbook import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
-from src.get_docx_data import docx_data_to_ls
-
-workbook = openpyxl.Workbook()
-default_sheet = workbook.active
-workbook.remove(default_sheet)
-green_font = Font(color="00C000")
-bold_font = Font(bold=True)
+from src.config import DIST_DIR
+from src.utils.get_docx_data import docx_data_to_ls
 
 """
 - 绿色字体 用于强调：请勿删除这个公式单元格。且它的下方均应通过'下拉填充'产生，而非手填
 - Random/123 仅作为 用户名/id数字 示例，可实际调整。
 """
+GREEN_FONT = Font(color="00C000")   # 绿色强调：公式单元格勿删
+BOLD_FONT = Font(bold=True)
 
-# 从docx自动读取题目信息
-# 获取docx中的题目数据
-question_data = docx_data_to_ls()
-
-# 处理sheet名：去掉末尾（XX分）+ 替换非法字符
-sheet_mapping = []  # 保存 (原docx题目名, 清洗后sheet名)
-for raw_title in question_data.keys():
-    # 去掉结尾类似（25分）、（30分）的后缀
-    clean_title = re.sub(r"（\d+分）$", "", raw_title).strip()
-    # 替换在线文档中sheet不允许的字符
-    clean_title = re.sub(r"[:：\\/／?？*＊\[\]［］]", "_", clean_title)
-    sheet_mapping.append((raw_title, clean_title))
-
-# 清洗后的sheet名列表
-sheet_names = [item[1] for item in sheet_mapping]
-num_sheets = len(sheet_names)
-
-first_sheet = workbook.create_sheet("答卷基本信息")
-first_sheet["A2"] = "用户名/id"
-first_sheet["A2"].font = bold_font
-first_sheet["A3"] = "满分值"
-first_sheet["A4"] = "Random/123"
-
-#! 选题情况标题：跨列居中+加粗
-start_col_selection = 2
-end_col_selection = start_col_selection + num_sheets - 1
-first_sheet.merge_cells(
-    start_row=1, start_column=start_col_selection,
-    end_row=1, end_column=end_col_selection
-)
-selection_title = first_sheet.cell(row=1, column=start_col_selection)
-selection_title.value = "选题情况"
-selection_title.font = bold_font
-selection_title.alignment = Alignment(horizontal="center", vertical="center")
-
-#! 批改完成情况标题：跨列居中+加粗
-NEW_START_COL = end_col_selection + 1
-end_col_correction = NEW_START_COL + num_sheets - 1
-first_sheet.merge_cells(
-    start_row=1, start_column=NEW_START_COL,
-    end_row=1, end_column=end_col_correction
-)
-correction_title = first_sheet.cell(row=1, column=NEW_START_COL)
-correction_title.value = "批改完成情况"
-correction_title.font = bold_font
-correction_title.alignment = Alignment(horizontal="center", vertical="center")
-
-# 填充选题情况和批改完成情况的题名
-for i, section in enumerate(["选题情况", "批改完成情况"]):
-    start_col = start_col_selection if i == 0 else NEW_START_COL
-    for j, name in enumerate(sheet_names):
-        cell = first_sheet.cell(row=2, column=start_col + j, value=name)
-        cell.alignment = Alignment(horizontal="left")
-
-# 填入1表示选该题，不填任何东西（即空单元格）表示不选题
-for j in range(num_sheets):
-    first_sheet.cell(row=3, column=start_col_selection + j, value=1)
-    first_sheet.cell(row=4, column=start_col_selection + j, value=random.choice([1, ""]))
-
-#! 自动创建各题sheet + 自动填小题
-for (raw_title, clean_title), name in zip(sheet_mapping, sheet_names):
-    sheet = workbook.create_sheet(clean_title)
-    # 基础信息
-    sheet["A1"] = "用户名/id"
-    sheet["A1"].font = bold_font
-    sheet["A2"] = "满分值"
-    sheet["A3"] = "=答卷基本信息!A4"
-    sheet["A3"].font = green_font
-    
-    sheet["B1"] = "总分＼小题号"
-    sheet["B2"] = "=SUM(C2:IV2)"
-    sheet["B2"].font = green_font
-
-    # 从docx读取当前题目的小题列表
-    questions = question_data[raw_title]
-    # 自动从C列开始填充小题号与满分
-    start_col = 3  # C列
-    for idx, (q_num, q_score) in enumerate(questions):
-        col = start_col + idx
-        # 小题号（第1行）
-        sheet.cell(row=1, column=col, value=q_num)
-        # 小题满分（第2行）
-        sheet.cell(row=2, column=col, value=q_score)
-
-# 填充批改情况公式
-for j, name in enumerate(sheet_names):
-    selection_col = get_column_letter(start_col_selection + j)
-    selection_cell = f"{selection_col}3"
-    sheet_b2_ref = f"'{name}'!B2"
-    target_col = NEW_START_COL + j
-    first_sheet.cell(row=3, column=target_col).value = f'=IF(AND({selection_cell}<>"", ISBLANK({sheet_b2_ref})), "✘", "✔")'
-    first_sheet.cell(row=3, column=target_col).font = green_font
-
-#! 使用说明
-instructions_start_col = end_col_correction + 2
-instructions_end_col = instructions_start_col + 12
-
-first_sheet.merge_cells(
-    start_row=1, start_column=instructions_start_col,
-    end_row=1, end_column=instructions_end_col
-)
-instructions_title = first_sheet.cell(row=1, column=instructions_start_col)
-instructions_title.value = "使用说明"
-instructions_title.font = bold_font
-instructions_title.alignment = Alignment(horizontal="center", vertical="center")
-
-instructions = [
+# 使用说明文本（保留原有内容）
+INSTRUCTIONS = [
     "1. 绿色字体单元格为公式单元格，请勿删除！其下方内容需通过下拉填充生成（勿手填）",
     "2. 有新参赛者时，请务必先在第一个工作表填写 '用户名/id数字' 和 选题情况，再到后面的工作表去批改具体题目。选题情况中：'1' 表示选该题，空表示未选",
     "3. 批改完成情况中：'✔' 表示已完成批改，'✘' 表示未完成。自行下拉即可查看批改情况。",
     "4. 批改具体题目时：满分值行用于填写各题满分标准（按自设分值修改）；用户分行对应实际得分。"
 ]
 
-for row_idx, content in enumerate(instructions, start=2):
-    first_sheet.merge_cells(
-        start_row=row_idx, start_column=instructions_start_col,
-        end_row=row_idx, end_column=instructions_end_col
+
+def _clean_sheet_name(raw_title: str) -> str:
+    """去除结尾的'（XX分）'并替换在线表格不允许的字符。"""
+    # 去掉“（25分）”等分值后缀
+    clean = re.sub(r"（\d+分）$", "", raw_title).strip()
+    # 替换非法字符
+    clean = re.sub(r"[:：\\/／?？*＊\[\]［］]", "_", clean)
+    return clean
+
+
+def _build_info_sheet(
+    wb: Workbook,
+    sheet_names: list[str],
+    sheet_mapping: list[tuple[str, str]],
+    question_data: dict[str, list[tuple[str, int]]]
+) -> tuple[Worksheet, int, int]:
+    """
+    构建“答卷基本信息”工作表，包含用户ID、选题情况、批改完成情况和使用说明。
+    返回：工作表对象、选题区域结束列、批改区域结束列。
+    """
+    ws = wb.create_sheet("答卷基本信息")
+
+    # 基础信息行
+    ws["A2"] = "用户名/id"
+    ws["A2"].font = BOLD_FONT
+    ws["A3"] = "满分值"
+    ws["A4"] = "Random/123"   # 示例用户名，可替换
+
+    num_sheets = len(sheet_names)
+    start_sel = 2  # 选题情况从 B 列开始
+    end_sel = start_sel + num_sheets - 1
+
+    # 选题情况标题
+    ws.merge_cells(start_row=1, start_column=start_sel, end_row=1, end_column=end_sel)
+    sel_cell = ws.cell(row=1, column=start_sel, value="选题情况")
+    sel_cell.font = BOLD_FONT
+    sel_cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # 批改完成情况标题（紧接其后）
+    start_corr = end_sel + 1
+    end_corr = start_corr + num_sheets - 1
+    ws.merge_cells(start_row=1, start_column=start_corr, end_row=1, end_column=end_corr)
+    corr_cell = ws.cell(row=1, column=start_corr, value="批改完成情况")
+    corr_cell.font = BOLD_FONT
+    corr_cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # 第2行填入清洗后的题名（左对齐）
+    for j, name in enumerate(sheet_names):
+        ws.cell(row=2, column=start_sel + j, value=name).alignment = Alignment(horizontal="left")
+        ws.cell(row=2, column=start_corr + j, value=name).alignment = Alignment(horizontal="left")
+
+    # 示例选题数据：满分行填1，用户行随机1或空。填入1表示选该题，不填任何东西（即空单元格）表示不选题
+    for j in range(num_sheets):
+        ws.cell(row=3, column=start_sel + j, value=1)
+        ws.cell(row=4, column=start_sel + j, value=random.choice([1, ""]))
+
+    # 批改完成情况公式
+    for j, name in enumerate(sheet_names):
+        col_letter = get_column_letter(start_sel + j)
+        selection_ref = f"{col_letter}3"
+        sheet_b2_ref = f"'{name}'!B2"
+        formula = f'=IF(AND({selection_ref}<>"", ISBLANK({sheet_b2_ref})), "✘", "✔")'
+        ws.cell(row=3, column=start_corr + j, value=formula).font = GREEN_FONT
+
+    # 使用说明区域（跨多列）
+    inst_start = end_corr + 2
+    inst_end = inst_start + 12
+    ws.merge_cells(start_row=1, start_column=inst_start, end_row=1, end_column=inst_end)
+    inst_title = ws.cell(row=1, column=inst_start, value="使用说明")
+    inst_title.font = BOLD_FONT
+    inst_title.alignment = Alignment(horizontal="center", vertical="center")
+
+    for i, text in enumerate(INSTRUCTIONS, start=2):
+        ws.merge_cells(start_row=i, start_column=inst_start, end_row=i, end_column=inst_end)
+        cell = ws.cell(row=i, column=inst_start, value=text)
+        cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+
+    return ws, end_sel, end_corr
+
+
+def _build_question_sheets(
+    wb: Workbook,
+    sheet_mapping: list[tuple[str, str]],
+    question_data: dict[str, list[tuple[str, int]]]
+) -> list[str]:
+    """为每道大题创建独立工作表，填入小题编号和满分。返回清洗后的表名列表。"""
+    sheet_names: list[str] = []
+    for raw_title, clean_title in sheet_mapping:
+        ws = wb.create_sheet(clean_title)
+        sheet_names.append(clean_title)
+
+        # 基础公式区域
+        ws["A1"] = "用户名/id"
+        ws["A1"].font = BOLD_FONT
+        ws["A2"] = "满分值"
+        ws["A3"] = "=答卷基本信息!A4"  # 引用用户ID
+        ws["A3"].font = GREEN_FONT
+
+        ws["B1"] = "总分＼小题号"
+        ws["B2"] = "=SUM(C2:IV2)"  # 总分公式
+        ws["B2"].font = GREEN_FONT
+
+        # 填入小题信息（编号与满分）
+        questions = question_data.get(raw_title, [])
+        for idx, (q_num, q_score) in enumerate(questions):
+            col = 3 + idx  # 从 C 列开始
+            ws.cell(row=1, column=col, value=q_num)
+            ws.cell(row=2, column=col, value=q_score)
+
+    return sheet_names
+
+
+def _build_summary_sheet(wb: Workbook, sheet_names: list[str]) -> None:
+    """创建“总分统计”表：全卷总分、最高三题总分、排名公式。"""
+    ws = wb.create_sheet("总分统计")
+
+    ws["A1"] = "用户名/id"
+    ws["A1"].font = BOLD_FONT
+    ws["A2"] = "满分值"
+    ws["A3"] = "=答卷基本信息!A4"
+    ws["A3"].font = GREEN_FONT
+
+    # 全卷总分（满分与实际得分）
+    ws["B1"] = "全卷总分"
+    ws["B2"] = "=" + "+".join([f"'{s}'!B2" for s in sheet_names])
+    ws["B2"].font = GREEN_FONT
+    ws["B3"] = "=" + "+".join([f"'{s}'!B3" for s in sheet_names])
+    ws["B3"].font = GREEN_FONT
+
+    # 最高三题总分（只计算得分 >0 的选题）
+    ws["C1"] = "最高三题总分"
+    n = len(sheet_names)
+    choose_index = "{" + ",".join(str(i) for i in range(1, n + 1)) + "}"
+    refs_b2 = ",".join(f"'{s}'!B2" for s in sheet_names)
+    refs_b3 = ",".join(f"'{s}'!B3" for s in sheet_names)
+    cond_b2 = f"IF(CHOOSE({choose_index},{refs_b2})>0,CHOOSE({choose_index},{refs_b2}))"
+    cond_b3 = f"IF(CHOOSE({choose_index},{refs_b3})>0,CHOOSE({choose_index},{refs_b3}))"
+
+    ws["C2"] = "=" + " + ".join([
+        f"IFERROR(LARGE({cond_b2},1),0)",
+        f"IFERROR(LARGE({cond_b2},2),0)",
+        f"IFERROR(LARGE({cond_b2},3),0)"
+    ])
+    ws["C3"] = "=" + " + ".join([
+        f"IFERROR(LARGE({cond_b3},1),0)",
+        f"IFERROR(LARGE({cond_b3},2),0)",
+        f"IFERROR(LARGE({cond_b3},3),0)"
+    ])
+    ws["C2"].font = GREEN_FONT
+    ws["C3"].font = GREEN_FONT
+
+    # 排名公式：先比最高三题总分，再比全卷总分
+    ws["D1"] = "排名"
+    ws["D3"] = (
+        "=SUMPRODUCT(($C$3:$C$1000>C3)*1)+"
+        "SUMPRODUCT(($C$3:$C$1000=C3)*($B$3:$B$1000>B3)*1)+1"
     )
-    cell = first_sheet.cell(row=row_idx, column=instructions_start_col)
-    cell.value = content
-    cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-
-#! 最后一个sheet用于总分统计
-last_sheet = workbook.create_sheet("总分统计")
-last_sheet["A1"] = "用户名/id"
-last_sheet["A1"].font = bold_font
-last_sheet["A2"] = "满分值"
-last_sheet["A3"] = "=答卷基本信息!A4"
-last_sheet["A3"].font = green_font
-
-last_sheet["B1"] = "全卷总分"
-last_sheet["B2"] = "=" + "+".join([f"'{sheet}'!B2" for sheet in sheet_names])
-last_sheet["B2"].font = green_font
-last_sheet["B3"] = "=" + "+".join([f"'{sheet}'!B3" for sheet in sheet_names])
-last_sheet["B3"].font = green_font
-
-last_sheet["C1"] = "最高三题总分"
-
-choose_index = "{" + ",".join(str(i) for i in range(1, len(sheet_names)+1)) + "}"
-
-sheet_refs_b2 = ",".join(f"'{sheet}'!B2" for sheet in sheet_names)
-sheet_refs_b3 = ",".join(f"'{sheet}'!B3" for sheet in sheet_names)
-
-# 条件片段
-cond_b2 = f"IF(CHOOSE({choose_index},{sheet_refs_b2})>0,CHOOSE({choose_index},{sheet_refs_b2}))"
-cond_b3 = f"IF(CHOOSE({choose_index},{sheet_refs_b3})>0,CHOOSE({choose_index},{sheet_refs_b3}))"
-
-# 第1大 + 第2大 + 第3大，分别取，取不到就给 0 (因为可能选题 < 3题)
-last_sheet["C2"] = "=" + " + ".join([
-    f"IFERROR(LARGE({cond_b2},1),0)",
-    f"IFERROR(LARGE({cond_b2},2),0)",
-    f"IFERROR(LARGE({cond_b2},3),0)"
-])
-
-last_sheet["C3"] = "=" + " + ".join([
-    f"IFERROR(LARGE({cond_b3},1),0)",
-    f"IFERROR(LARGE({cond_b3},2),0)",
-    f"IFERROR(LARGE({cond_b3},3),0)"
-])
-
-last_sheet["C2"].font = green_font
-last_sheet["C3"].font = green_font
-
-last_sheet["D1"] = "排名"
-
-# 排名公式：先比C列(最高三题)，再比B列(全卷总分)，下拉即用
-last_sheet["D3"] = "=SUMPRODUCT(($C$3:$C$1000>C3)*1)+SUMPRODUCT(($C$3:$C$1000=C3)*($B$3:$B$1000>B3)*1)+1"
-last_sheet["D3"].font = green_font
+    ws["D3"].font = GREEN_FONT
 
 
-#! 设置单元格居中
-for sheet in workbook.worksheets:
-    for row in sheet.iter_rows():
-        for cell in row:
-            if (sheet.title == "答卷基本信息" and (instructions_start_col <= cell.column <= instructions_end_col)) or \
-               (sheet.title == "答卷基本信息" and cell.row == 2 and (start_col_selection <= cell.column <= end_col_selection or NEW_START_COL <= cell.column <= end_col_correction)):
-                continue
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+def _apply_center_alignment(
+    wb: Workbook,
+    inst_start: int, inst_end: int,
+    sel_start: int, sel_end: int,
+    corr_start: int, corr_end: int
+) -> None:
+    """统一设置居中对齐，但保留使用说明和题名行的左对齐。"""
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if ws.title == "答卷基本信息":
+                    # 使用说明区域保持左对齐
+                    if inst_start <= cell.column <= inst_end:
+                        continue
+                    # 第2行的题名需左对齐
+                    if cell.row == 2 and (
+                        sel_start <= cell.column <= sel_end or
+                        corr_start <= cell.column <= corr_end
+                    ):
+                        continue
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
-import os
-from pathlib import Path
 
-def main():
-    # 确保 dist 目录存在
-    dist_dir = Path(__file__).resolve().parent.parent / "dist"
-    dist_dir.mkdir(parents=True, exist_ok=True)
-    output_path = dist_dir / "final.xlsx"
-    workbook.save(output_path)
+def build_workbook(question_data: dict[str, list[tuple[str, int]]]) -> Workbook:
+    """主构建函数：组装完整的工作簿（不含保存）。"""
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)  # 移除默认空白工作表
+
+    # 工作表名清洗映射
+    sheet_mapping: list[tuple[str, str]] = [
+        (raw, _clean_sheet_name(raw)) for raw in question_data
+    ]
+    clean_names = [clean for _, clean in sheet_mapping]
+
+    # 依次构建各模块
+    _, sel_end, corr_end = _build_info_sheet(wb, clean_names, sheet_mapping, question_data)
+    _build_question_sheets(wb, sheet_mapping, question_data)
+    _build_summary_sheet(wb, clean_names)
+
+    # 对齐设置
+    num = len(clean_names)
+    sel_start = 2
+    sel_final = sel_start + num - 1
+    corr_start = sel_final + 1
+    corr_final = corr_start + num - 1
+    inst_start = corr_final + 2
+    inst_end = inst_start + 12
+    _apply_center_alignment(wb, inst_start, inst_end, sel_start, sel_final, corr_start, corr_final)
+
+    return wb
+
+
+def main() -> None:
+    """
+    程序入口：从 docx 读取题目信息 -> 生成 xlsx -> 保存到 dist 目录。
+    """
+    question_data = docx_data_to_ls()
+    wb = build_workbook(question_data)
+    DIST_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = DIST_DIR / "final.xlsx"
+    wb.save(output_path)
     print(f"✓ 文件已保存到 {output_path}")
+
 
 if __name__ == "__main__":
     main()
-    
