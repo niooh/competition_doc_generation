@@ -6,7 +6,7 @@ from pypdf import PdfReader, PdfWriter
 from src.config import DOC_DIR, DIST_DIR, TEMP_DIR, YEAR
 from src.converter.docx_to_pdf import convert_batch
 from src.utils.pdf_extras import (
-    create_cover, create_toc, merge_pdfs, get_doc_title, add_page_numbers
+    create_cover, create_toc, merge_pdfs, get_doc_title, add_page_numbers,
 )
 from src.utils.watermark import add_watermark
 
@@ -47,16 +47,35 @@ def merge_docx_to_pdf(input_dir: Path, output_pdf: Path) -> None:
 
     cover_pdf = create_cover(YEAR)
     toc_pdf = TEMP_DIR / "toc.pdf"
-    create_toc(doc_info, toc_pdf)      # 目录中的页码直接对应正文页码
+    toc_pdf_path = create_toc(doc_info, toc_pdf)  # 现在只返回路径
 
-    # 合并封面、目录、带页码的正文，再统一加水印
+    # 合并封面、目录、带页码的正文，再加水印
     merged_no_wm = TEMP_DIR / "merged_no_watermark.pdf"
-    merge_pdfs([cover_pdf, toc_pdf, body_numbered], merged_no_wm)
+    merge_pdfs([cover_pdf, toc_pdf_path, body_numbered], merged_no_wm)
     add_watermark(str(merged_no_wm), str(output_pdf), YEAR)
+
+    # 添加 PDF 书签大纲
+    reader = PdfReader(str(output_pdf))
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+
+    # 页面索引：0=封面，1~toc_pages=目录，正文从 toc_pages+1 开始
+    toc_pages = len(PdfReader(str(toc_pdf_path)).pages)
+    body_start_index = 1 + toc_pages  # 封面 + 目录页数
+
+    # 添加一个父书签指向目录页
+    toc_bookmark = writer.add_outline_item("目录", page_number=1)  # 目录页在索引 1
+
+    for title, body_page in doc_info:
+        target_page = body_start_index + body_page - 1
+        writer.add_outline_item(title, target_page, parent=toc_bookmark)
+
+    with open(str(output_pdf), "wb") as f:
+        writer.write(f)
 
     shutil.rmtree(TEMP_DIR, ignore_errors=True)
     print(f"✓ Output saved to {output_pdf}")
-
 
 def main() -> None:
     DIST_DIR.mkdir(exist_ok=True)

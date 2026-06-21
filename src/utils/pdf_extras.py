@@ -54,7 +54,6 @@ def create_toc(entries: list[tuple[str, int]],
     """
     生成目录PDF，返回文件路径。
     entries: [(文档标题, 在正文中的起始页码), ...]
-    页码直接使用正文页码（即正文第1页为1）。
     """
     if output_path is None:
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -75,12 +74,12 @@ def create_toc(entries: list[tuple[str, int]],
             c.showPage()
             c.setFont(get_cjk_font(), 12)
             y = height - 30 * mm
-        c.drawString(left_margin, y, title[:80])
+        title_text = title[:80]
+        c.drawString(left_margin, y, title_text)
         c.drawRightString(right_margin, y, str(body_page))
         y -= line_height
     c.save()
     return str(output_path)
-
 
 def merge_pdfs(pdf_paths: list[str | Path], output_path: str | Path) -> None:
     """按顺序合并多个PDF并写入 output_path。"""

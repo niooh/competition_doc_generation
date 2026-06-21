@@ -9,10 +9,16 @@
 - 包管理器 [uv](https://github.com/astral-sh/uv)
 - Windows 10+ 环境（如果需要支持通过 Microsoft Office 将 docx 转为 pdf）
 
-然后运行以下命令安装需要的包：
+然后在 pwsh 运行以下命令安装需要的包：
+
+```pwsh
+uv sync
+```
+
+如果你在 wsl2 中，需要使用以下方式调用命令：
 
 ```bash
-uv sync
+pwsh.exe -Command <cmd>
 ```
 
 ### 2. 准备试题文档
@@ -24,7 +30,7 @@ uv sync
 
 ### 3. 生成表格
 
-```bash
+```pwsh
 uv run xlsx
 # 或 python -m src.generate_xlsx
 ```
@@ -43,7 +49,7 @@ uv run xlsx
 
 ### 4. 合并生成 PDF
 
-```
+```pwsh
 uv run merge
 # 或 python -m src.merge_docx_to_pdf
 ```
@@ -55,12 +61,13 @@ uv run merge
 
 ## Develop & Contribute
 
-```bash
+```pwsh
 uv sync --group dev
 uvx ty check .  # 检查类型
 ```
 
-## Todo
+## Plan
 
-- [ ] 改善合并文档目录。
-- [ ] 检查文档格式。
+- [x] 导出表格
+- [x] 合并文档目录
+- [ ] 检查文档格式
