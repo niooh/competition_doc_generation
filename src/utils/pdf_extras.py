@@ -1,4 +1,4 @@
-import os
+import io
 from pathlib import Path
 
 from reportlab.lib.pagesizes import A4
@@ -9,6 +9,27 @@ from docx import Document
 
 from src.config import YEAR, TEMP_DIR
 from src.utils.fonts import get_cjk_font
+
+
+def add_page_numbers(input_pdf: str, output_pdf: str) -> None:
+    """给 PDF 每页底部居中添加从 1 开始的页码"""
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+    font_name = get_cjk_font()
+    for i, page in enumerate(reader.pages):
+        w = float(page.mediabox.width)
+        h = float(page.mediabox.height)
+        packet = io.BytesIO()
+        c = canvas.Canvas(packet, pagesize=(w, h))
+        c.setFont(font_name, 10)
+        c.drawCentredString(w / 2, 20, str(i + 1))
+        c.save()
+        packet.seek(0)
+        overlay = PdfReader(packet).pages[0]
+        page.merge_page(overlay, over=True)
+        writer.add_page(page)
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
 
 
 def create_cover(year: int = YEAR, output_path: str | Path = None) -> str:
@@ -28,12 +49,12 @@ def create_cover(year: int = YEAR, output_path: str | Path = None) -> str:
     return str(output_path)
 
 
-def create_toc(entries: list[tuple[str, int]], body_offset: int,
+def create_toc(entries: list[tuple[str, int]],
                output_path: str | Path = None) -> str:
     """
     生成目录PDF，返回文件路径。
     entries: [(文档标题, 在正文中的起始页码), ...]
-    body_offset: 目录之后正文之前的总页数偏移（封面+目录页数）
+    页码直接使用正文页码（即正文第1页为1）。
     """
     if output_path is None:
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,13 +71,12 @@ def create_toc(entries: list[tuple[str, int]], body_offset: int,
 
     c.setFont(get_cjk_font(), 12)
     for title, body_page in entries:
-        final_page = body_page + body_offset - 1
         if y < 30 * mm:
             c.showPage()
             c.setFont(get_cjk_font(), 12)
             y = height - 30 * mm
         c.drawString(left_margin, y, title[:80])
-        c.drawRightString(right_margin, y, str(final_page))
+        c.drawRightString(right_margin, y, str(body_page))
         y -= line_height
     c.save()
     return str(output_path)
