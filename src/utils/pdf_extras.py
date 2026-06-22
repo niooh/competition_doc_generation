@@ -32,7 +32,7 @@ def add_page_numbers(input_pdf: str, output_pdf: str) -> None:
         writer.write(f)
 
 
-def create_cover(year: int = YEAR, output_path: str | Path = None) -> str:
+def create_cover(year: int = YEAR, output_path: str | Path | None = None) -> str:
     """生成封面页，返回临时文件路径（若未指定则使用默认临时路径）。"""
     if output_path is None:
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,7 +50,7 @@ def create_cover(year: int = YEAR, output_path: str | Path = None) -> str:
 
 
 def create_toc(entries: list[tuple[str, int]],
-               output_path: str | Path = None) -> str:
+               output_path: str | Path | None = None) -> str:
     """
     生成目录PDF，返回文件路径。
     entries: [(文档标题, 在正文中的起始页码), ...]

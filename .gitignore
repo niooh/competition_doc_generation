@@ -15,4 +15,5 @@ venv/
 *.log
 *.tmp
 *.temp
+*.7z
 pwd_report.md

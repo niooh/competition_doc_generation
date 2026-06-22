@@ -26,7 +26,7 @@ dev = [
 ]
 
 [project.scripts]
-check = "src.utils.format_checker"
+check = "src.utils.format_checker:main"
 xlsx = "src.generate_xlsx:main"
 merge = "src.merge_docx_to_pdf:main"
 

@@ -76,7 +76,7 @@ def has_green_text(para) -> bool:
 
 
 def check_file(docx_path: Path) -> tuple[list[dict], list[dict]]:
-    doc = Document(docx_path)
+    doc = Document(str(docx_path))
     errors = []
     warnings = []
 
