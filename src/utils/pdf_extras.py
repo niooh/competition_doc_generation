@@ -7,9 +7,9 @@ from reportlab.pdfgen import canvas
 from pypdf import PdfReader, PdfWriter
 from docx import Document
 
-from src.config import YEAR, TEMP_DIR
-from src.utils.fonts import get_cjk_font
+from src.config import YEAR, GROUP, TEMP_DIR, TOC_TOP_MARGIN
 
+from src.utils.fonts import get_cjk_font
 
 def add_page_numbers(input_pdf: str, output_pdf: str) -> None:
     """给 PDF 每页底部居中添加从 1 开始的页码"""
@@ -42,7 +42,7 @@ def create_cover(year: int = YEAR, output_path: str | Path | None = None) -> str
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
-    title = f"{year}年暑假化学吧吧赛试题（大学组）"
+    title = f"{year}年暑假化学吧吧赛试题（{group}）"
     c.setFont(get_cjk_font(), 28)
     c.drawCentredString(width / 2, height / 2, title)
     c.save()
@@ -65,7 +65,7 @@ def create_toc(entries: list[tuple[str, int]],
     width, height = A4
     left_margin = 40 * mm
     right_margin = width - 40 * mm
-    y = height - 30 * mm
+    y = height - TOC_TOP_MARGIN * mm
     line_height = 7 * mm
 
     c.setFont(get_cjk_font(), 12)

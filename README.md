@@ -25,8 +25,9 @@ pwsh.exe -Command '<cmd>'
 
 - 在项目根目录下创建 `doc/`，将所有 `.docx` 试题文件放入此文件夹。
 - 试题文档需遵循模板要求：
-  - 使用 Word 多级列表（自动编号），最终会被解析为 `1-1`、`2-1-1` 等形式。
+  - 使用 Word 多级列表自动编号。
   - 每道小题末尾附带分值，格式为中文括号，例如“（5分）”，且分值括号必须位于行尾。
+- 在 `src/config.py` 定义年份和组别。
 
 ### 3. 生成表格
 
@@ -70,7 +71,12 @@ uv run check
 
 ```pwsh
 uv sync --group dev
-uvx ty check .  # 检查类型
+
+# 创建你的分支
+git checkout -b new-feature
+...
+
+uvx ty check .  # 检查类型，确保通过
 ```
 
 ## Plan
