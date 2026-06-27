@@ -33,4 +33,3 @@ merge = "src.merge_docx_to_pdf:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src", "src.*"]
-

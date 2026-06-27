@@ -69,15 +69,7 @@ uv run check
 
 ## Develop & Contribute
 
-```pwsh
-uv sync --group dev
-
-# 创建你的分支
-git checkout -b new-feature
-...
-
-uvx ty check .  # 检查类型，确保通过
-```
+如果你想为本代码库做出贡献，请阅读 [Contributing Guide](./.github/CONTRIBUTING.md)。
 
 ## Plan
 
