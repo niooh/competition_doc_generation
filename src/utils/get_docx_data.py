@@ -98,13 +98,13 @@ def parse_doc(doc_path: str) -> tuple[str, list[tuple[str, int]]]:
     return title, filter_parent_items(result)
 
 
-def docx_data_to_ls() -> dict[str, list[tuple[str, int]]]:
-    """批量读取 DOC_DIR 下所有 docx，返回 {标题: [(编号, 分数)]}。"""
-    folder = DOC_DIR
+def docx_data_to_ls(directory: Path = DOC_DIR) -> dict[str, list[tuple[str, int]]]:
+    """批量读取指定目录下所有 docx，返回 {标题: [(编号, 分数)]}。"""
+    folder = directory
     res = {}
     if not folder.exists():
         folder.mkdir(parents=True)
-        print(f"⚠️ 创建了 doc/，请将 .docx 放入后重新运行")
+        print(f"创建了 {folder}，请将 .docx 放入后重新运行")
         return res
 
     for fname in os.listdir(folder):
@@ -122,3 +122,4 @@ if __name__ == "__main__":
     data = docx_data_to_ls()
     for t, content in data.items():
         print(f"{t}: {content}")
+        

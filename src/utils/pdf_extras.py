@@ -6,6 +6,7 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from pypdf import PdfReader, PdfWriter
 from docx import Document
+from PIL import Image
 
 from src.config import YEAR, GROUP, TEMP_DIR, TOC_TOP_MARGIN
 
@@ -32,7 +33,7 @@ def add_page_numbers(input_pdf: str, output_pdf: str) -> None:
         writer.write(f)
 
 
-def create_cover(year: int = YEAR, output_path: str | Path | None = None) -> str:
+def create_cover(year: int = YEAR, group: str = GROUP, output_path: str | Path | None = None) -> str:
     """生成封面页，返回临时文件路径（若未指定则使用默认临时路径）。"""
     if output_path is None:
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -50,10 +51,12 @@ def create_cover(year: int = YEAR, output_path: str | Path | None = None) -> str
 
 
 def create_toc(entries: list[tuple[str, int]],
+               image_path: str | Path | None = None,
                output_path: str | Path | None = None) -> str:
     """
     生成目录PDF，返回文件路径。
     entries: [(文档标题, 在正文中的起始页码), ...]
+    image_path: 可选，在目录下方插入的图片（如周期表）路径
     """
     if output_path is None:
         TEMP_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,23 +66,54 @@ def create_toc(entries: list[tuple[str, int]],
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
-    left_margin = 40 * mm
-    right_margin = width - 40 * mm
+    left_margin = 25 * mm
+    right_margin = width - 25 * mm
     y = height - TOC_TOP_MARGIN * mm
-    line_height = 7 * mm
+    line_height = 13 * mm
 
-    c.setFont(get_cjk_font(), 12)
+    # 绘制目录条目
+    c.setFont(get_cjk_font(), 16)
     for title, body_page in entries:
-        if y < 30 * mm:
+        if y < 40 * mm:  # 当前页空间不足，换页
             c.showPage()
             c.setFont(get_cjk_font(), 12)
-            y = height - 30 * mm
+            y = height - 40 * mm
         title_text = title[:80]
         c.drawString(left_margin, y, title_text)
         c.drawRightString(right_margin, y, str(body_page))
         y -= line_height
+
+    # 在目录下方绘制周期表
+    if image_path is not None and Path(image_path).is_file():
+        img_display_width = width * 0.85  # 占页面宽度比例
+        with Image.open(image_path) as img:
+            img_w, img_h = img.size
+        ratio = img_display_width / img_w
+        img_display_height = img_h * ratio
+
+        # 图片所需的总高度
+        required_space = img_display_height + 15 * mm
+        # 与目录最后一行保持间距
+        gap_above_img = 10 * mm
+
+        # 检查当前页剩余空间是否足够放置图片
+        if y - gap_above_img - required_space < 15 * mm:
+            # 空间不足，新开一页单独放置图片
+            c.showPage()
+            y = height - 20 * mm   # 从新页顶部留少量空白开始
+        else:
+            # 空间足够，从最后一行文字下方挪动 gap_above_img 距离
+            y -= gap_above_img
+
+        # 居中绘制图片
+        img_x = (width - img_display_width) / 2
+        img_y = y - img_display_height   # 图片底边位置
+        c.drawImage(str(image_path), img_x, img_y,
+                    width=img_display_width, height=img_display_height)
+
     c.save()
     return str(output_path)
+
 
 def merge_pdfs(pdf_paths: list[str | Path], output_path: str | Path) -> None:
     """按顺序合并多个PDF并写入 output_path。"""
@@ -93,7 +127,7 @@ def merge_pdfs(pdf_paths: list[str | Path], output_path: str | Path) -> None:
 
 
 def get_doc_title(docx_path: str | Path) -> str:
-    """从 docx 第一段提取标题（失败则返回文件名）。"""
+    """从 docx 第一段提取标题，失败则返回文件名。"""
     try:
         doc = Document(str(docx_path))
         if doc.paragraphs:

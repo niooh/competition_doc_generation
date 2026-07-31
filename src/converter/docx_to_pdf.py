@@ -14,16 +14,19 @@ def convert_one(docx_path: str, pdf_path: str, max_retries: int = 2) -> bool:
             word = win32.Dispatch("Word.Application")
             word.Visible = False
             word.DisplayAlerts = 0
+            # 让 Word 有足够时间完成启动
+            time.sleep(1)
             doc = word.Documents.Open(docx_path, ReadOnly=True, Visible=False)
-            doc.SaveAs(pdf_path, FileFormat=17)   # 17 = wdFormatPDF
+            time.sleep(0.2)
+            doc.SaveAs(pdf_path, FileFormat=17)
             return True
         except Exception as e:
             print(f"  ✗ Attempt {attempt + 1}/{max_retries} failed for {Path(docx_path).name}: {e}")
             if attempt == max_retries - 1:
                 return False
+            # 失败后让 Word 完全退出，并等待系统回收资源
             time.sleep(1)
         finally:
-            # 确保资源释放
             try:
                 if doc is not None:
                     doc.Close(False)
@@ -36,7 +39,6 @@ def convert_one(docx_path: str, pdf_path: str, max_retries: int = 2) -> bool:
                 pass
             pythoncom.CoUninitialize()
     return False
-
 
 def convert_batch(docx_files: list[Path], output_dir: Path) -> list[Path]:
     """批量转换 docx 到 PDF，返回成功生成的 PDF 文件路径列表。"""
@@ -55,3 +57,5 @@ def convert_batch(docx_files: list[Path], output_dir: Path) -> list[Path]:
     elapsed = time.perf_counter() - start
     print(f"Conversion finished in {elapsed:.1f}s")
     return pdf_files
+
+    

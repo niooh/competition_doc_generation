@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from src.config import DIST_DIR
+from src.config import DIST_DIR, USE_FOLDER, DOC_DIR
 from src.utils.get_docx_data import docx_data_to_ls
 
 """
@@ -239,16 +239,39 @@ def build_workbook(question_data: dict[str, list[tuple[str, int]]]) -> Workbook:
 
 
 def main() -> None:
-    """
-    程序入口：从 docx 读取题目信息 -> 生成 xlsx -> 保存到 dist 目录。
-    """
-    question_data = docx_data_to_ls()
-    wb = build_workbook(question_data)
     DIST_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = DIST_DIR / "final.xlsx"
-    wb.save(output_path)
-    print(f"✓ 文件已保存到 {output_path}")
 
+    if USE_FOLDER:
+        subdirs = [d for d in DOC_DIR.iterdir() if d.is_dir() and not d.name.startswith('.')]
+        if not subdirs:
+            print("No subdirectories found. Processing doc/ root.")
+            question_data = docx_data_to_ls(DOC_DIR)
+            if not question_data:
+                print("No .docx files found. Nothing to generate.")
+                return
+            wb = build_workbook(question_data)
+            wb.save(DIST_DIR / "final.xlsx")
+            print(f"✓ 文件已保存到 {DIST_DIR / 'final.xlsx'}")
+        else:
+            for subdir in subdirs:
+                print(f"\n- Processing folder: {subdir.name}")
+                question_data = docx_data_to_ls(subdir)
+                if not question_data:
+                    print(f"  → No valid docx files in {subdir.name}, skipped.")
+                    continue
+                wb = build_workbook(question_data)
+                output_path = DIST_DIR / f"final_{subdir.name}.xlsx"
+                wb.save(output_path)
+                print(f"  ✓ 文件已保存到 {output_path}")
+    else:
+        question_data = docx_data_to_ls(DOC_DIR)
+        if not question_data:
+            print("No .docx files found. Nothing to generate.")
+            return
+        wb = build_workbook(question_data)
+        output_path = DIST_DIR / "final.xlsx"
+        wb.save(output_path)
+        print(f"✓ 文件已保存到 {output_path}")
 
 if __name__ == "__main__":
     main()

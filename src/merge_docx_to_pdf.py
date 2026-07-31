@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
 
-from src.config import DOC_DIR, DIST_DIR, TEMP_DIR, YEAR
+from src.config import DOC_DIR, DIST_DIR, TEMP_DIR, YEAR, PERIODIC_TABLE_IMG, USE_FOLDER, GROUP
 from src.converter.docx_to_pdf import convert_batch
 from src.utils.pdf_extras import (
     create_cover, create_toc, merge_pdfs, get_doc_title, add_page_numbers,
@@ -11,7 +11,7 @@ from src.utils.pdf_extras import (
 from src.utils.watermark import add_watermark
 
 
-def merge_docx_to_pdf(input_dir: Path, output_pdf: Path) -> None:
+def merge_docx_to_pdf(input_dir: Path, output_pdf: Path, group: str = GROUP) -> None:
     """转换所有 docx -> 合并 -> 加封面/目录/页码/水印。"""
     input_dir = input_dir.resolve()
     output_pdf = output_pdf.resolve()
@@ -41,15 +41,16 @@ def merge_docx_to_pdf(input_dir: Path, output_pdf: Path) -> None:
     with open(body_pdf, "wb") as f:
         writer.write(f)
 
-    # 正文添加页码（从 1 开始，底部居中）
+    # 正文添加页码
     body_numbered = TEMP_DIR / "body_numbered.pdf"
     add_page_numbers(str(body_pdf), str(body_numbered))
 
-    cover_pdf = create_cover(YEAR)
+    # 封面与目录（传入动态组名）
+    cover_pdf = create_cover(YEAR, group=group)
     toc_pdf = TEMP_DIR / "toc.pdf"
-    toc_pdf_path = create_toc(doc_info, toc_pdf)  # 现在只返回路径
+    toc_pdf_path = create_toc(doc_info, image_path=PERIODIC_TABLE_IMG, output_path=toc_pdf)
 
-    # 合并封面、目录、带页码的正文，再加水印
+    # 合并封面、目录、正文，加水印
     merged_no_wm = TEMP_DIR / "merged_no_watermark.pdf"
     merge_pdfs([cover_pdf, toc_pdf_path, body_numbered], merged_no_wm)
     add_watermark(str(merged_no_wm), str(output_pdf), YEAR)
@@ -60,13 +61,10 @@ def merge_docx_to_pdf(input_dir: Path, output_pdf: Path) -> None:
     for page in reader.pages:
         writer.add_page(page)
 
-    # 页面索引：0=封面，1~toc_pages=目录，正文从 toc_pages+1 开始
     toc_pages = len(PdfReader(str(toc_pdf_path)).pages)
     body_start_index = 1 + toc_pages  # 封面 + 目录页数
 
-    # 添加一个父书签指向目录页
-    toc_bookmark = writer.add_outline_item("目录", page_number=1)  # 目录页在索引 1
-
+    toc_bookmark = writer.add_outline_item("目录", page_number=1)
     for title, body_page in doc_info:
         target_page = body_start_index + body_page - 1
         writer.add_outline_item(title, target_page, parent=toc_bookmark)
@@ -77,10 +75,30 @@ def merge_docx_to_pdf(input_dir: Path, output_pdf: Path) -> None:
     shutil.rmtree(TEMP_DIR, ignore_errors=True)
     print(f"✓ Output saved to {output_pdf}")
 
+
 def main() -> None:
     DIST_DIR.mkdir(exist_ok=True)
-    merge_docx_to_pdf(DOC_DIR, DIST_DIR / "merged.pdf")
+
+    if USE_FOLDER:
+        # 扫描 doc 下所有子文件夹（忽略非目录文件）
+        subdirs = [d for d in DOC_DIR.iterdir() if d.is_dir()]
+        if not subdirs:
+            print("No subdirectories found under doc/. Falling back to flat mode.")
+            merge_docx_to_pdf(DOC_DIR, DIST_DIR / "merged.pdf")
+        else:
+            for subdir in subdirs:
+                # 跳过隐藏文件夹或空文件夹（可选）
+                if subdir.name.startswith('.'):
+                    continue
+                group_name = subdir.name   # 文件夹名即组名，如“初中组”
+                output_pdf = DIST_DIR / f"merged_{group_name}.pdf"
+                print(f"\n- Processing folder: {group_name}")
+                merge_docx_to_pdf(subdir, output_pdf, group=group_name)
+    else:
+        # 单组模式：直接读取 doc 根目录
+        merge_docx_to_pdf(DOC_DIR, DIST_DIR / "merged.pdf")
 
 
 if __name__ == "__main__":
     main()
+    
