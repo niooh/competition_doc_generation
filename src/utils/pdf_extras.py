@@ -66,55 +66,59 @@ def create_toc(entries: list[tuple[str, int]],
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
+
+    # 页面布局参数（可根据需要调整）
     left_margin = 25 * mm
     right_margin = width - 25 * mm
-    y = height - TOC_TOP_MARGIN * mm
+    toc_font_size = 16
     line_height = 13 * mm
+    # 底部最小保留空间
+    bottom_margin = 8 * mm
+
+    font_name = get_cjk_font()
+    c.setFont(font_name, toc_font_size)
+
+    y = height - TOC_TOP_MARGIN * mm
 
     # 绘制目录条目
-    c.setFont(get_cjk_font(), 16)
     for title, body_page in entries:
-        if y < 40 * mm:  # 当前页空间不足，换页
+        # 如果当前页剩余空间不足以再画一行，换页
+        if y < bottom_margin + line_height:
             c.showPage()
-            c.setFont(get_cjk_font(), 12)
-            y = height - 40 * mm
+            c.setFont(font_name, toc_font_size)
+            y = height - bottom_margin
+
         title_text = title[:80]
         c.drawString(left_margin, y, title_text)
         c.drawRightString(right_margin, y, str(body_page))
         y -= line_height
 
-    # 在目录下方绘制周期表
+    # 在目录下方绘制图片（如周期表）
     if image_path is not None and Path(image_path).is_file():
-        img_display_width = width * 0.85  # 占页面宽度比例
+        img_display_width = width * 0.8  # 图片占页面宽度的比例
         with Image.open(image_path) as img:
             img_w, img_h = img.size
         ratio = img_display_width / img_w
         img_display_height = img_h * ratio
 
-        # 图片所需的总高度
-        required_space = img_display_height + 15 * mm
-        # 与目录最后一行保持间距
         gap_above_img = 10 * mm
+        # 图片所需总高度：图片本身 + 上方间距 + 底部留白
+        required_height = img_display_height + gap_above_img + bottom_margin
 
-        # 检查当前页剩余空间是否足够放置图片
-        if y - gap_above_img - required_space < 15 * mm:
-            # 空间不足，新开一页单独放置图片
+        # 如果剩余空间放不下图片，新开一页
+        if y - required_height < bottom_margin:
             c.showPage()
-            y = height - 20 * mm   # 从新页顶部留少量空白开始
-        else:
-            # 空间足够，从最后一行文字下方挪动 gap_above_img 距离
-            y -= gap_above_img
+            y = height - bottom_margin
 
-        # 居中绘制图片
+        # 居中放置图片
         img_x = (width - img_display_width) / 2
-        img_y = y - img_display_height   # 图片底边位置
+        img_y = y - gap_above_img - img_display_height
         c.drawImage(str(image_path), img_x, img_y,
                     width=img_display_width, height=img_display_height)
 
     c.save()
     return str(output_path)
-
-
+    
 def merge_pdfs(pdf_paths: list[str | Path], output_path: str | Path) -> None:
     """按顺序合并多个PDF并写入 output_path。"""
     writer = PdfWriter()
