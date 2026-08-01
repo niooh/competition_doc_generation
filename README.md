@@ -5,9 +5,9 @@
 ### 1. 安装依赖
 
 你需要有：
-- Python 3.11+
 - 包管理器 [uv](https://github.com/astral-sh/uv)
-- Windows 10+ 环境（如果需要支持通过 Microsoft Office 将 docx 转为 pdf）
+- Python 3.11+（如果没装也可以用 uv 自动安装）
+- Windows 10+ 环境，支持通过 Microsoft Office 将 docx 转为 pdf
 
 然后在 pwsh 运行以下命令安装需要的包：
 

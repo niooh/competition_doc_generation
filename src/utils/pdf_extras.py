@@ -43,9 +43,13 @@ def create_cover(year: int = YEAR, group: str = GROUP, output_path: str | Path |
 
     c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
-    title = f"{year}年暑假化学吧吧赛试题（{group}）"
+    line1 = f"{year}年暑假化学吧吧赛试题"
+    line2 = f"（{group}）"
     c.setFont(get_cjk_font(), 28)
-    c.drawCentredString(width / 2, height / 2, title)
+    # 第一行放在垂直中点偏上的位置，第二行放在偏下的位置
+    c.drawCentredString(width / 2, height / 2 + 24, line1)
+    c.drawCentredString(width / 2, height / 2 - 16, line2)
+
     c.save()
     return str(output_path)
 
@@ -68,8 +72,8 @@ def create_toc(entries: list[tuple[str, int]],
     width, height = A4
 
     # 页面布局参数（可根据需要调整）
-    left_margin = 25 * mm
-    right_margin = width - 25 * mm
+    left_margin = 30 * mm
+    right_margin = width - 30 * mm
     toc_font_size = 16
     line_height = 13 * mm
     # 底部最小保留空间
