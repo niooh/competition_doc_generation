@@ -6,19 +6,13 @@
 
 你需要有：
 - 包管理器 [uv](https://github.com/astral-sh/uv)
-- Python 3.11+（如果没装也可以用 uv 自动安装）
+- Python 3.11+（如果没装，uv 会自动安装）
 - Windows 10+ 环境，支持通过 Microsoft Office 将 docx 转为 pdf
 
-然后在 pwsh 运行以下命令安装需要的包：
+在 `pwsh / powershell` 运行以下命令，安装需要的包：
 
 ```pwsh
 uv sync
-```
-
-如果你在 wsl2 中，需要使用以下方式调用命令：
-
-```bash
-pwsh.exe -Command '<cmd>'
 ```
 
 ### 2. 准备试题文档
@@ -57,8 +51,8 @@ uv run merge
 ```
 
 <details>
-<summary>生成 <code>dist/merged.pdf</code>，即为批改表格。</summary>
-包含封面、目录、正文及灰色倾斜水印。
+<summary>生成 <code>dist/merged.pdf</code>，即为试题文档。</summary>
+包含封面、目录、正文，并添加水印。
 </details>
 
 ### 5. 初步检查 DOCX 格式
