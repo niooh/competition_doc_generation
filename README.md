@@ -24,7 +24,21 @@ uv sync
   - 每道小题末尾附带分值，格式为中文括号，例如“（5分）”，且分值括号必须位于行尾。
 - 在 `src/config.py` 定义年份和组别。
 
-### 3. 生成表格
+### 3. 生成文档
+
+#### 合并生成 PDF
+
+```pwsh
+uv run merge
+# 或 python -m src.merge_docx_to_pdf
+```
+
+<details>
+<summary>生成 <code>dist/merged.pdf</code>，即为试题文档。</summary>
+包含封面、目录、正文，并添加水印。
+</details>
+
+#### 生成表格
 
 ```pwsh
 uv run xlsx
@@ -43,19 +57,7 @@ uv run xlsx
 | 总分统计 | 自动计算全卷总分、最高三题总分及排名 |
 </details>
 
-### 4. 合并生成 PDF
-
-```pwsh
-uv run merge
-# 或 python -m src.merge_docx_to_pdf
-```
-
-<details>
-<summary>生成 <code>dist/merged.pdf</code>，即为试题文档。</summary>
-包含封面、目录、正文，并添加水印。
-</details>
-
-### 5. 初步检查 DOCX 格式
+### 4. 初步检查 DOCX 格式（实验性，可选）
 
 ```pwsh
 uv run check

@@ -132,7 +132,8 @@ def _build_question_sheets(
         questions = question_data.get(raw_title, [])
         for idx, (q_num, q_score) in enumerate(questions):
             col = 3 + idx  # 从 C 列开始
-            ws.cell(row=1, column=col, value=q_num)
+            cell = ws.cell(row=1, column=col, value=q_num)
+            cell.number_format = '@'  # 设置文本格式，避免 1-1 变成日期
             ws.cell(row=2, column=col, value=q_score)
 
     return sheet_names
