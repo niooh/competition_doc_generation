@@ -18,4 +18,4 @@
    git push origin new-feature
    ```
 
-4. 创建一个新的 Pull Request，格式参考 `../../.github/PULL_REQUEST_TEMPLATE.md`。
+4. 创建一个新的 Pull Request，格式参考[模板](/.github/PULL_REQUEST_TEMPLATE.md)。
