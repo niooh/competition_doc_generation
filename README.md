@@ -1,4 +1,4 @@
-> 自动从 docx 生成竞赛试题相关文件的工具。支持从赛题文档中提取小题结构，生成批改统计表格、合并问卷等。
+> 从符合模板格式的一系列竞赛试题 .docx 自动生成相关文件的工具。支持从赛题文档中提取小题结构，生成批改统计表格、合并问卷等。
 
 ## Quick Start
 
@@ -17,8 +17,8 @@ uv sync
 
 ### 2. 准备试题文档
 
-- 在项目根目录下创建 `doc/`，将所有 `.docx` 试题文件放入此文件夹，或者一个特定的子文件夹。
-- 可以用同层级的 `order.txt` 指定合并的顺序，每行一个名字。
+- 在项目根目录下创建 `doc/`，将所有 `.docx` 试题文件放入此文件夹，或者一个特定的子文件夹 (如 `doc/初中组/`、`doc/高中组/`、`doc/大学组/`)。
+- 可以用与 .docx 文件同层级的 `order.txt` 指定合并的顺序，每行一个名字。
 - 试题文档需遵循模板要求：
   - 使用 Word 多级列表自动编号。
   - 每道小题末尾附带分值，格式为中文括号，例如“（5分）”，且分值括号必须位于行尾。
@@ -36,6 +36,7 @@ uv run merge
 <details>
 <summary>生成 <code>dist/merged.pdf</code>，即为试题文档。</summary>
 包含封面、目录、正文，并添加水印。
+封面的周期表图片来源于 IUPAC《Periodic Table of the Elements》2022 年 5 月 4 日版。原始文件见<a href="https://iupac.org/wp-content/uploads/2022/07/IUPAC_Periodic_Table-04May22_CRA.pdf">链接</a>。
 </details>
 
 #### 生成表格
