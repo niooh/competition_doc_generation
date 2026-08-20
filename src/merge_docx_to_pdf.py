@@ -9,58 +9,7 @@ from src.utils.pdf_extras import (
     create_cover, create_toc, merge_pdfs, get_doc_title, add_page_numbers,
 )
 from src.utils.watermark import add_watermark
-
-def get_docx_order(input_dir: Path) -> list[Path]:
-    """
-    从 order.txt 读取顺序；若无该文件则返回字母排序的列表。
-    order.txt 每行一个文件名（可带 .docx 也可不带）。
-    """
-    order_file = input_dir / "order.txt"
-    if not order_file.is_file():
-        return sorted(input_dir.glob("*.docx"))
-
-    # 读取所有非空行
-    lines = []
-    with open(order_file, "r", encoding="utf-8") as f:
-        for line in f:
-            name = line.strip()
-            if name:
-                lines.append(name)
-
-    # 按顺序查找对应的 .docx 文件
-    ordered = []
-    all_docx = {p.stem: p for p in input_dir.glob("*.docx")}
-    for name in lines:
-        # 如果写了完整文件名（含扩展名）
-        if name.lower().endswith(".docx"):
-            stem = Path(name).stem
-        else:
-            stem = name
-
-        # 匹配文件（不区分大小写）
-        matched = None
-        if stem in all_docx:
-            matched = all_docx[stem]
-        else:
-            # 尝试大小写不敏感匹配
-            for s, p in all_docx.items():
-                if s.lower() == stem.lower():
-                    matched = p
-                    break
-
-        if matched is None:
-            print(f"⚠ order.txt 中指定的文件不存在: {name}")
-        else:
-            ordered.append(matched)
-
-    # 若 order.txt 为空或所有项都无效，回退到默认排序
-    if not ordered:
-        print("order.txt 有效条目为空，按文件名排序。")
-        return sorted(input_dir.glob("*.docx"))
-
-    # 可补充未出现在 order.txt 中的文件（按需决定是否追加）
-    # 这里选择只包含 order 中指定的文件（更严格）
-    return ordered
+from src.utils.order import get_docx_order
     
 def merge_docx_to_pdf(input_dir: Path, output_pdf: Path, group: str = GROUP) -> None:
     """转换所有 docx -> 合并 -> 加封面/目录/页码/水印。"""
