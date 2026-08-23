@@ -28,14 +28,12 @@ INSTRUCTIONS = [
 
 
 def _clean_sheet_name(raw_title: str) -> str:
-    """去除结尾的'（XX分）'并替换在线表格不允许的字符。"""
     # 去掉“（25分）”等分值后缀
     clean = re.sub(r"（\d+分）$", "", raw_title).strip()
-    # 替换非法字符
-    clean = re.sub(r"[:：\\/／?？*＊\[\]［］]", "_", clean)
+    # 替换在线表格不允许的字符
+    clean = re.sub(r"[:：\\/／?？*＊\[\]［］'']", "_", clean)
     return clean
-
-
+    
 def _build_info_sheet(
     wb: Workbook,
     sheet_names: list[str],
@@ -165,16 +163,9 @@ def _build_summary_sheet(wb: Workbook, sheet_names: list[str]) -> None:
     cond_b2 = f"IF(CHOOSE({choose_index},{refs_b2})>0,CHOOSE({choose_index},{refs_b2}))"
     cond_b3 = f"IF(CHOOSE({choose_index},{refs_b3})>0,CHOOSE({choose_index},{refs_b3}))"
 
-    ws["C2"] = "=" + " + ".join([
-        f"IFERROR(LARGE({cond_b2},1),0)",
-        f"IFERROR(LARGE({cond_b2},2),0)",
-        f"IFERROR(LARGE({cond_b2},3),0)"
-    ])
-    ws["C3"] = "=" + " + ".join([
-        f"IFERROR(LARGE({cond_b3},1),0)",
-        f"IFERROR(LARGE({cond_b3},2),0)",
-        f"IFERROR(LARGE({cond_b3},3),0)"
-    ])
+    ws["C2"] = f"=SUM(IFERROR(LARGE({cond_b2},{{1,2,3}}),0))"
+    ws["C3"] = f"=SUM(IFERROR(LARGE({cond_b3},{{1,2,3}}),0))"
+
     ws["C2"].font = GREEN_FONT
     ws["C3"].font = GREEN_FONT
 
