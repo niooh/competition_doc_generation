@@ -58,6 +58,19 @@ uv run xlsx
 | 总分统计 | 自动计算全卷总分、最高三题总分及排名 |
 </details>
 
+#### 生成排名图
+复制 Excel 总分统计部分为 tsv 字符串，填入 py 脚本并运行：
+
+```pwsh
+python src/converter/tsv_string_to_png.py
+python src/converter/tsv_string_with_remark_to_png.py
+```
+
+<details>
+<summary>生成 <code>./output.png</code>。</summary>
+此脚本依赖 typst，由于对表格可能附加说明列，所以未完全自动化。
+</details>
+
 ### 4. 初步检查 DOCX 格式（实验性，可选）
 
 ```pwsh
