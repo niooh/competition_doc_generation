@@ -63,12 +63,11 @@ uv run xlsx
 
 ```pwsh
 python src/converter/tsv_string_to_png.py
-python src/converter/tsv_string_with_remark_to_png.py
 ```
 
 <details>
 <summary>生成 <code>./output.png</code>。</summary>
-此脚本依赖 typst，由于对表格可能附加说明列，所以未完全自动化。
+此脚本依赖 typst，由于对表格可能附加说明列，所以未完全自动化，只需从表格统计部分复制粘贴。
 </details>
 
 ### 4. 初步检查 DOCX 格式（实验性，可选）
